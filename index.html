@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bilateral Dural Venous Sinus Flow and Pathology Sound Simulator</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --card: #1f2937;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent2: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --border: #334155;
+      --left: #ef4444;
+      --right: #38bdf8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #0b1220 0%, #111827 100%);
+      color: var(--text);
+      padding: 20px;
+    }
+    .wrap { max-width: 1400px; margin: 0 auto; }
+    h1 { margin: 0 0 10px 0; font-size: 30px; line-height: 1.2; }
+    .subtitle { color: var(--muted); line-height: 1.5; margin-bottom: 18px; }
+    .topbar {
+      display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
+    }
+    button {
+      background: var(--accent); color: #082f49; border: none; padding: 12px 18px; border-radius: 12px;
+      font-weight: bold; cursor: pointer; font-size: 15px;
+    }
+    button.secondary { background: #cbd5e1; color: #111827; }
+    button.warn { background: var(--warn); color: #111827; }
+    .status {
+      padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.03);
+      min-width: 260px; display: flex; align-items: center; gap: 8px; font-weight: bold;
+    }
+    .grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; }
+    .panel {
+      background: rgba(17, 24, 39, 0.92); border: 1px solid var(--border); border-radius: 18px; padding: 18px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+    }
+    .panel h2 { margin-top: 0; font-size: 22px; }
+    .mini { color: var(--muted); font-size: 14px; line-height: 1.45; margin-top: -2px; margin-bottom: 14px; }
+    .section-title {
+      margin: 18px 0 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 16px; color: #bae6fd;
+      letter-spacing: 0.2px;
+    }
+    .two-col { display:grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .side-box {
+      background: rgba(255,255,255,0.03); border:1px solid var(--border); border-radius: 16px; padding: 14px;
+    }
+    .side-box.left { box-shadow: inset 0 0 0 1px rgba(34,197,94,0.18); }
+    .side-box.right { box-shadow: inset 0 0 0 1px rgba(56,189,248,0.18); }
+    .side-box h3 { margin: 0 0 10px 0; font-size: 18px; }
+    .left h3 { color: var(--left); }
+    .right h3 { color: var(--right); }
+    .control-grid { display:grid; grid-template-columns: 1fr 110px; gap: 10px 16px; align-items:center; }
+    .control-grid label { font-weight:bold; }
+    .control-grid input[type="range"] {
+      width:100%; appearance:none; height:7px; background:#334155; border-radius:999px; outline:none;
+    }
+    .control-grid input[type="range"]::-webkit-slider-thumb {
+      appearance:none; width:18px; height:18px; border-radius:50%; background:var(--accent); cursor:pointer; border:2px solid #ecfeff;
+    }
+    .digital {
+      background:#020617; color:#86efac; border:1px solid #14532d; border-radius:10px; text-align:center;
+      font-family:"Courier New", monospace; padding:8px 10px; font-size:16px; font-weight:bold; min-height:38px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .metrics { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; margin-top:6px; }
+    .metric { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:14px; padding:12px; }
+    .metric .name { color: var(--muted); font-size:13px; margin-bottom:6px; }
+    .metric .value { font-size:22px; font-weight:bold; font-family:"Courier New", monospace; }
+    .metric .bar { margin-top:8px; width:100%; height:8px; border-radius:999px; background:#1e293b; overflow:hidden; }
+    .metric .fill { height:100%; width:0%; background: linear-gradient(90deg, var(--accent2), var(--warn), var(--danger)); }
+    .note {
+      margin-top: 14px; font-size: 13px; color: var(--muted); line-height: 1.5; background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: 14px; padding: 12px;
+    }
+    .preset-hub { margin: 0 0 18px 0; }
+    .preset-row-center { display:flex; justify-content:center; margin: 0 0 10px 0; }
+    .preset-row-two { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px; }
+    .preset-hub button { width:100%; }
+    .preset-main { max-width: 420px; background: linear-gradient(90deg, #cbd5e1, #e2e8f0); color:#111827; }
+    .preset-bilateral { background: linear-gradient(90deg, #94a3b8, #cbd5e1); color:#111827; }
+    .preset-left { background: linear-gradient(90deg, #7f1d1d, #ef4444); color:#fff; }
+    .preset-right { background: linear-gradient(90deg, #1d4ed8, #38bdf8); color:#fff; }
+    .preset-marked { box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 26px rgba(239,68,68,0.18); }
+    .mode-row { display:grid; grid-template-columns: 1fr 160px; gap:10px 16px; align-items:center; margin-top:14px; }
+    .mode-row select {
+      width:100%; background:#020617; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:15px;
+    }
+    .visual-card { margin-top:16px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:14px; padding:12px; }
+    .wave-grid, .freq-grid, .flow-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .wave-wrap, .freq-wrap, .flow-wrap { margin-top:10px; background:#020617; border:1px solid #1e293b; border-radius:12px; padding:10px; }
+    canvas { width:100%; display:block; border-radius:8px; background: linear-gradient(180deg, #020617 0%, #0f172a 100%); }
+    .wave-canvas { height:170px; }
+    .freq-canvas { height:160px; }
+    .flow-canvas { height:180px; }
+    .canvas-label { font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight:bold; }
+    .left-label { color: var(--left); }
+    .right-label { color: var(--right); }
+    @media (max-width: 1100px) {
+      .grid, .two-col, .wave-grid, .freq-grid, .flow-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Bilateral Dural Venous Sinus Flow and Pathology Sound Simulator</h1>
+    <div class="subtitle">
+      This bilateral simulator separates the left and right dural venous sinuses acoustically and visually. Each side has its own anomaly controls, waveform display, frequency spectrum, and flow visualization. All sound layers remain active whenever audio is running, while their intensity changes with the selected physiological and pathological settings.
+    </div>
+
+    <div class="topbar">
+      <button id="startBtn">Start Audio</button>
+      <button id="stopBtn" class="secondary">Stop Audio</button>
+      <button id="normalBtn" class="secondary">Reset to Normal</button>
+      <div class="status" id="engineStatus">Engine status: stopped</div>
+    </div>
+
+    <div class="panel preset-hub">
+      <h2>Quick Presets</h2>
+      <div class="mini">All presets are grouped here at the top. Bilateral presets sit in the center, with matching left and right variants directly below them.</div>
+
+      <div class="preset-row-center">
+        <button data-preset="normal" class="preset-main">Normal Bilateral Flow</button>
+      </div>
+      <div class="preset-row-two">
+        <button data-preset="leftDominant" class="preset-left">Left Dominant Flow</button>
+        <button data-preset="rightDominant" class="preset-right">Right Dominant Flow</button>
+      </div>
+
+      <div class="preset-row-center">
+        <button data-preset="moderate" class="preset-bilateral">Moderate Bilateral Pathology</button>
+      </div>
+      <div class="preset-row-two">
+        <button data-preset="moderateLeft" class="preset-left">Moderate Left Pathology</button>
+        <button data-preset="moderateRight" class="preset-right">Moderate Right Pathology</button>
+      </div>
+
+      <div class="preset-row-center">
+        <button data-preset="markedBilateral" class="preset-bilateral preset-marked">Marked Bilateral Pathology</button>
+      </div>
+      <div class="preset-row-two">
+        <button data-preset="markedLeft" class="preset-left preset-marked">Marked Left Pathology</button>
+        <button data-preset="markedRight" class="preset-right preset-marked">Marked Right Pathology</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>Global Physiological Controls</h2>
+        <div class="mini">
+          These parameters affect both sinuses simultaneously, while the anomaly sliders below allow independent left and right control.
+        </div>
+
+        <div class="control-grid">
+          <label for="heartRate">Heart Rate (bpm)</label>
+          <div class="digital" id="heartRateVal">72</div>
+          <input id="heartRate" type="range" min="45" max="130" step="1" value="72" />
+          <div></div>
+
+          <label for="venousVelocity">Mean Venous Velocity (m/s)</label>
+          <div class="digital" id="venousVelocityVal">0.22</div>
+          <input id="venousVelocity" type="range" min="0.05" max="0.80" step="0.01" value="0.22" />
+          <div></div>
+
+          <label for="bloodDensity">Blood Density (g/cm³ proxy)</label>
+          <div class="digital" id="bloodDensityVal">1.05</div>
+          <input id="bloodDensity" type="range" min="1.00" max="1.08" step="0.01" value="1.05" />
+          <div></div>
+
+          <label for="oxygenation">Blood Oxygenation (%)</label>
+          <div class="digital" id="oxygenationVal">97</div>
+          <input id="oxygenation" type="range" min="70" max="100" step="1" value="97" />
+          <div></div>
+
+          <label for="intracranialPressure">Intracranial Pressure (mmHg)</label>
+          <div class="digital" id="intracranialPressureVal">12</div>
+          <input id="intracranialPressure" type="range" min="5" max="35" step="1" value="12" />
+          <div></div>
+
+          <label for="masterVolume">Master Volume</label>
+          <div class="digital" id="masterVolumeVal">0.22</div>
+          <input id="masterVolume" type="range" min="0.02" max="0.60" step="0.01" value="0.22" />
+          <div></div>
+        </div>
+
+        <div class="section-title">Independent Left and Right Dural Sinus Controls</div>
+        <div class="two-col">
+          <div class="side-box left">
+            <h3>Left Dural Sinus</h3>
+            <div class="control-grid">
+              <label for="leftDiameter">Left Sigmoid Sinus Diameter (mm)</label>
+              <div class="digital" id="leftDiameterVal">6.8</div>
+              <input id="leftDiameter" type="range" min="2.5" max="10.0" step="0.1" value="6.8" />
+              <div></div>
+
+              <label for="leftStenosis">Left Stenosis</label>
+              <div class="digital" id="leftStenosisVal">0</div>
+              <input id="leftStenosis" type="range" min="0" max="100" step="1" value="0" />
+              <div></div>
+
+              <label for="leftDiverticulum">Left Diverticulum</label>
+              <div class="digital" id="leftDiverticulumVal">0</div>
+              <input id="leftDiverticulum" type="range" min="0" max="100" step="1" value="0" />
+              <div></div>
+
+              <label for="leftDehiscence">Left Dehiscence</label>
+              <div class="digital" id="leftDehiscenceVal">0</div>
+              <input id="leftDehiscence" type="range" min="0" max="100" step="1" value="0" />
+              <div></div>
+
+              <label for="leftWallIrregularity">Left Wall Irregularity</label>
+              <div class="digital" id="leftWallIrregularityVal">0</div>
+              <input id="leftWallIrregularity" type="range" min="0" max="100" step="1" value="0" />
+              <div></div>
+
+              <label for="leftGlobalTurbulence">Left Turbulence Boost</label>
+              <div class="digital" id="leftGlobalTurbulenceVal">0</div>
+              <input id="leftGlobalTurbulence" type="range" min="0" max="100" step="1" value="0" />
+              <div></div>
+            </div>
+          </div>
+
+          <div class="side-box right">
+            <h3>Right Dural Sinus</h3>
+            <div class="control-grid">
+              <label for="rightDiameter">Right Sigmoid Sinus Diameter (mm)</label>
+              <div class="digital" id="rightDiameterVal">7.2</div>
+              <input id="rightDiameter" type="range" min="2.5" max="10.0" step="0.1" value="7.2" />
+              <div></div>
+
+              <label for="rightStenosis">Right Stenosis</label>
+              <div class="digital" id="rightStenosisVal">0</div>
+              <input id="rightStenosis" type="range" min="0" max="100" step="1" value="0" />
+              <div></div>
+
+              <label for="rightDiverticulum">Right Diverticulum</label>
+              <div class="digital" id="rightDiverticulumVal">0</div>
+              <input id="rightDiverticulum" type="range" min="0" max="100" step="1" value="0" />
+              <div></div>
+
+              <label for="rightDehiscence">Right Dehiscence</label>
+              <div class="digital" id="rightDehiscenceVal">0</div>
+              <input id="rightDehiscence" type="range" min="0" max="100" step="1" value="0" />
+              <div></div>
+
+              <label for="rightWallIrregularity">Right Wall Irregularity</label>
+              <div class="digital" id="rightWallIrregularityVal">0</div>
+              <input id="rightWallIrregularity" type="range" min="0" max="100" step="1" value="0" />
+              <div></div>
+
+              <label for="rightGlobalTurbulence">Right Turbulence Boost</label>
+              <div class="digital" id="rightGlobalTurbulenceVal">0</div>
+              <input id="rightGlobalTurbulence" type="range" min="0" max="100" step="1" value="0" />
+              <div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mode-row">
+          <label for="stereoMode">Listening Mode</label>
+          <div class="digital" id="stereoModeDisplay">Stereo L/R</div>
+          <select id="stereoMode">
+            <option value="stereo" selected>Stereo Left / Right Ears</option>
+            <option value="left">Left Ear Emphasis</option>
+            <option value="right">Right Ear Emphasis</option>
+            <option value="mono">Mono Center</option>
+          </select>
+          <div></div>
+        </div>
+
+        <div class="note">
+          Acoustic logic: each side maintains a continuously active low venous base, a side-specific rough pulsatile body, and a continuously active transmission/noise layer. Higher stenosis increases jet noise, diverticulum adds slow cyclic wavering, dehiscence increases audibility and sharper frequency energy, wall irregularity increases rasping instability, and turbulence boost broadens the noise field for that specific side.
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Real-Time Bilateral Output Indicators</h2>
+        <div class="mini">
+          The monitors below show separate left and right acoustic behavior rather than a single combined display.
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <div class="name">Left Turbulence Index</div>
+            <div class="value" id="metricLeftTurbulence">0.00</div>
+            <div class="bar"><div class="fill" id="metricLeftTurbulenceFill"></div></div>
+          </div>
+          <div class="metric">
+            <div class="name">Right Turbulence Index</div>
+            <div class="value" id="metricRightTurbulence">0.00</div>
+            <div class="bar"><div class="fill" id="metricRightTurbulenceFill"></div></div>
+          </div>
+          <div class="metric">
+            <div class="name">Left Transmission</div>
+            <div class="value" id="metricLeftTransmission">0.00</div>
+            <div class="bar"><div class="fill" id="metricLeftTransmissionFill"></div></div>
+          </div>
+          <div class="metric">
+            <div class="name">Right Transmission</div>
+            <div class="value" id="metricRightTransmission">0.00</div>
+            <div class="bar"><div class="fill" id="metricRightTransmissionFill"></div></div>
+          </div>
+          <div class="metric">
+            <div class="name">Left Roughness</div>
+            <div class="value" id="metricLeftRoughness">0.00</div>
+            <div class="bar"><div class="fill" id="metricLeftRoughnessFill"></div></div>
+          </div>
+          <div class="metric">
+            <div class="name">Right Roughness</div>
+            <div class="value" id="metricRightRoughness">0.00</div>
+            <div class="bar"><div class="fill" id="metricRightRoughnessFill"></div></div>
+          </div>
+          <div class="metric">
+            <div class="name">Left Acoustic Character</div>
+            <div class="value" id="metricLeftCharacter" style="font-size:16px;line-height:1.3;font-family:Arial,Helvetica,sans-serif;">Soft left venous hum</div>
+            <div class="bar"><div class="fill" id="metricLeftCharacterFill"></div></div>
+          </div>
+          <div class="metric">
+            <div class="name">Right Acoustic Character</div>
+            <div class="value" id="metricRightCharacter" style="font-size:16px;line-height:1.3;font-family:Arial,Helvetica,sans-serif;">Soft right venous hum</div>
+            <div class="bar"><div class="fill" id="metricRightCharacterFill"></div></div>
+          </div>
+        </div>
+
+        <div class="visual-card">
+          <div class="section-title" style="margin-top:0;padding-top:0;border-top:none;">Separate Live Waveforms</div>
+          <div class="mini">
+            The waveform monitor is now split into left and right dural sinus channels.
+          </div>
+          <div class="wave-grid">
+            <div class="wave-wrap">
+              <div class="canvas-label left-label">Left Dural Sinus Waveform</div>
+              <canvas id="waveformLeft" class="wave-canvas" width="520" height="170"></canvas>
+            </div>
+            <div class="wave-wrap">
+              <div class="canvas-label right-label">Right Dural Sinus Waveform</div>
+              <canvas id="waveformRight" class="wave-canvas" width="520" height="170"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="visual-card">
+          <div class="section-title" style="margin-top:0;">Separate Frequency Spectra</div>
+          <div class="mini">
+            Frequency energy under each waveform is shown independently for the left and right dural sinuses.
+          </div>
+          <div class="freq-grid">
+            <div class="freq-wrap">
+              <div class="canvas-label left-label">Left Dural Sinus Frequency Spectrum</div>
+              <canvas id="freqLeft" class="freq-canvas" width="520" height="160"></canvas>
+            </div>
+            <div class="freq-wrap">
+              <div class="canvas-label right-label">Right Dural Sinus Frequency Spectrum</div>
+              <canvas id="freqRight" class="freq-canvas" width="520" height="160"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="visual-card">
+          <div class="section-title" style="margin-top:0;">Visible Left and Right Flow Simulations</div>
+          <div class="mini">
+            These panels visualize side-specific vessel flow behavior, showing increasing instability as each side becomes more pathological.
+          </div>
+          <div class="flow-grid">
+            <div class="flow-wrap">
+              <div class="canvas-label left-label">Left Dural Sinus Flow Simulation</div>
+              <canvas id="flowLeft" class="flow-canvas" width="520" height="180"></canvas>
+            </div>
+            <div class="flow-wrap">
+              <div class="canvas-label right-label">Right Dural Sinus Flow Simulation</div>
+              <canvas id="flowRight" class="flow-canvas" width="520" height="180"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Interpretive Summary</div>
+        <div class="note" id="summaryBox">
+          The current settings correspond to a predominantly normal bilateral venous flow profile with subtle physiological pulsation on both sides.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ids = [
+      'heartRate','venousVelocity','bloodDensity','oxygenation','intracranialPressure','masterVolume',
+      'leftDiameter','leftStenosis','leftDiverticulum','leftDehiscence','leftWallIrregularity','leftGlobalTurbulence',
+      'rightDiameter','rightStenosis','rightDiverticulum','rightDehiscence','rightWallIrregularity','rightGlobalTurbulence'
+    ];
+
+    const controls = {};
+    const outputs = {};
+    ids.forEach(id => {
+      controls[id] = document.getElementById(id);
+      outputs[id] = document.getElementById(id + 'Val');
+    });
+
+    const metricEls = {
+      leftTurbulence: document.getElementById('metricLeftTurbulence'),
+      rightTurbulence: document.getElementById('metricRightTurbulence'),
+      leftTransmission: document.getElementById('metricLeftTransmission'),
+      rightTransmission: document.getElementById('metricRightTransmission'),
+      leftRoughness: document.getElementById('metricLeftRoughness'),
+      rightRoughness: document.getElementById('metricRightRoughness'),
+      leftCharacter: document.getElementById('metricLeftCharacter'),
+      rightCharacter: document.getElementById('metricRightCharacter'),
+      leftTurbulenceFill: document.getElementById('metricLeftTurbulenceFill'),
+      rightTurbulenceFill: document.getElementById('metricRightTurbulenceFill'),
+      leftTransmissionFill: document.getElementById('metricLeftTransmissionFill'),
+      rightTransmissionFill: document.getElementById('metricRightTransmissionFill'),
+      leftRoughnessFill: document.getElementById('metricLeftRoughnessFill'),
+      rightRoughnessFill: document.getElementById('metricRightRoughnessFill'),
+      leftCharacterFill: document.getElementById('metricLeftCharacterFill'),
+      rightCharacterFill: document.getElementById('metricRightCharacterFill')
+    };
+
+    const engineStatus = document.getElementById('engineStatus');
+    const summaryBox = document.getElementById('summaryBox');
+    const stereoMode = document.getElementById('stereoMode');
+    const stereoModeDisplay = document.getElementById('stereoModeDisplay');
+
+    const waveformLeftCanvas = document.getElementById('waveformLeft');
+    const waveformRightCanvas = document.getElementById('waveformRight');
+    const freqLeftCanvas = document.getElementById('freqLeft');
+    const freqRightCanvas = document.getElementById('freqRight');
+    const flowLeftCanvas = document.getElementById('flowLeft');
+    const flowRightCanvas = document.getElementById('flowRight');
+
+    const waveformLeftCtx = waveformLeftCanvas.getContext('2d');
+    const waveformRightCtx = waveformRightCanvas.getContext('2d');
+    const freqLeftCtx = freqLeftCanvas.getContext('2d');
+    const freqRightCtx = freqRightCanvas.getContext('2d');
+    const flowLeftCtx = flowLeftCanvas.getContext('2d');
+    const flowRightCtx = flowRightCanvas.getContext('2d');
+
+    let ctx = null;
+    let animationFrame = null;
+    let flowPhase = 0;
+
+    let leftBase1, leftBase2, rightBase1, rightBase2, leftNoise, rightNoise;
+    let leftBand, rightBand, leftHigh, rightHigh;
+    let leftGain, rightGain, leftNoiseGain, rightNoiseGain, masterGain;
+    let leftPanner, rightPanner, analyserMaster, analyserLeftWave, analyserRightWave, analyserLeftFreq, analyserRightFreq;
+    let pulseOsc, pulseDepthGain;
+    let leftDivOsc, rightDivOsc, leftDivGain, rightDivGain;
+    let leftRoughOsc, rightRoughOsc, leftRoughGain, rightRoughGain;
+
+    function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+
+    function createNoiseBuffer(audioCtx, seconds = 2) {
+      const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * seconds, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      return buffer;
+    }
+
+    function buildNoisePair(noiseBuffer) {
+      const a = ctx.createBufferSource();
+      a.buffer = noiseBuffer; a.loop = true;
+      const b = ctx.createBufferSource();
+      b.buffer = noiseBuffer; b.loop = true;
+      return { a, b };
+    }
+
+    function sideCharacter(turbulence, roughness, transmission) {
+      if (turbulence < 0.45 && roughness < 0.35) return 'Soft venous hum';
+      if (turbulence < 0.9) return 'Mild pulsatile whoosh';
+      if (roughness < 0.9 && transmission < 0.4) return 'Turbulent venous flow';
+      if (transmission < 0.65) return 'Harsh pulsatile flow noise';
+      return 'Loud transmitted pathological roar';
+    }
+
+    function computeModelMetrics() {
+      const hr = parseFloat(controls.heartRate.value);
+      const vel = parseFloat(controls.venousVelocity.value);
+      const density = parseFloat(controls.bloodDensity.value);
+      const oxy = parseFloat(controls.oxygenation.value);
+      const icp = parseFloat(controls.intracranialPressure.value);
+
+      const baseCommon = (vel * 1.25) + ((density - 1.0) * 2.2) + ((100 - oxy) / 140) + clamp((icp - 12) / 20, 0, 1.2) * 0.34 + ((hr - 60) / 160);
+
+      const left = {
+        diameter: parseFloat(controls.leftDiameter.value),
+        stenosis: parseFloat(controls.leftStenosis.value) / 100,
+        diverticulum: parseFloat(controls.leftDiverticulum.value) / 100,
+        dehiscence: parseFloat(controls.leftDehiscence.value) / 100,
+        wall: parseFloat(controls.leftWallIrregularity.value) / 100,
+        turbBoost: parseFloat(controls.leftGlobalTurbulence.value) / 100
+      };
+
+      const right = {
+        diameter: parseFloat(controls.rightDiameter.value),
+        stenosis: parseFloat(controls.rightStenosis.value) / 100,
+        diverticulum: parseFloat(controls.rightDiverticulum.value) / 100,
+        dehiscence: parseFloat(controls.rightDehiscence.value) / 100,
+        wall: parseFloat(controls.rightWallIrregularity.value) / 100,
+        turbBoost: parseFloat(controls.rightGlobalTurbulence.value) / 100
+      };
+
+      function calc(side) {
+        const inverseDiameter = (1 / side.diameter) * 2.1;
+        const turbulence = clamp(baseCommon + inverseDiameter + side.stenosis * 1.2 + side.diverticulum * 0.6 + side.wall * 0.8 + side.turbBoost * 1.0, 0, 3.2);
+        const roughness = clamp(side.wall * 1.2 + side.stenosis * 0.75 + side.turbBoost * 0.7 + ((hr - 60) / 170), 0, 2.3);
+        const transmission = clamp(side.dehiscence * 0.85 + side.stenosis * 0.18 + side.turbBoost * 0.12 + clamp((icp - 12) / 25, 0, 1) * 0.12, 0, 1);
+        const burden = clamp((side.stenosis + side.diverticulum + side.dehiscence + side.wall + side.turbBoost) / 5, 0, 1);
+        return {
+          ...side,
+          turbulence,
+          roughness,
+          transmission,
+          burden,
+          character: sideCharacter(turbulence, roughness, transmission)
+        };
+      }
+
+      const leftMetrics = calc(left);
+      const rightMetrics = calc(right);
+
+      const summary = (() => {
+        const parts = [];
+        if (leftMetrics.burden < 0.12 && rightMetrics.burden < 0.12) {
+          return 'The current settings correspond to a predominantly normal bilateral venous flow profile with subtle physiological pulsation on both sides.';
+        }
+        if (leftMetrics.burden >= 0.12) parts.push(`the left side shows ${leftMetrics.character.toLowerCase()}`);
+        if (rightMetrics.burden >= 0.12) parts.push(`the right side shows ${rightMetrics.character.toLowerCase()}`);
+        if (leftMetrics.transmission > 0.45) parts.push('left-sided transmission is prominent');
+        if (rightMetrics.transmission > 0.45) parts.push('right-sided transmission is prominent');
+        if (leftMetrics.turbulence > rightMetrics.turbulence + 0.25) parts.push('left-sided turbulence is dominant');
+        if (rightMetrics.turbulence > leftMetrics.turbulence + 0.25) parts.push('right-sided turbulence is dominant');
+        return 'The bilateral model is deviating from normal flow: ' + parts.join(', ') + '.';
+      })();
+
+      return { left: leftMetrics, right: rightMetrics, summary };
+    }
+
+    function updateDigitalDisplays() {
+      ids.forEach(id => outputs[id].textContent = controls[id].value);
+      const metrics = computeModelMetrics();
+      metricEls.leftTurbulence.textContent = metrics.left.turbulence.toFixed(2);
+      metricEls.rightTurbulence.textContent = metrics.right.turbulence.toFixed(2);
+      metricEls.leftTransmission.textContent = metrics.left.transmission.toFixed(2);
+      metricEls.rightTransmission.textContent = metrics.right.transmission.toFixed(2);
+      metricEls.leftRoughness.textContent = metrics.left.roughness.toFixed(2);
+      metricEls.rightRoughness.textContent = metrics.right.roughness.toFixed(2);
+      metricEls.leftCharacter.textContent = metrics.left.character;
+      metricEls.rightCharacter.textContent = metrics.right.character;
+
+      metricEls.leftTurbulenceFill.style.width = `${clamp(metrics.left.turbulence / 3, 0, 1) * 100}%`;
+      metricEls.rightTurbulenceFill.style.width = `${clamp(metrics.right.turbulence / 3, 0, 1) * 100}%`;
+      metricEls.leftTransmissionFill.style.width = `${metrics.left.transmission * 100}%`;
+      metricEls.rightTransmissionFill.style.width = `${metrics.right.transmission * 100}%`;
+      metricEls.leftRoughnessFill.style.width = `${clamp(metrics.left.roughness / 2.3, 0, 1) * 100}%`;
+      metricEls.rightRoughnessFill.style.width = `${clamp(metrics.right.roughness / 2.3, 0, 1) * 100}%`;
+      metricEls.leftCharacterFill.style.width = `${metrics.left.burden * 100}%`;
+      metricEls.rightCharacterFill.style.width = `${metrics.right.burden * 100}%`;
+
+      summaryBox.textContent = metrics.summary;
+      stereoModeDisplay.textContent = ({stereo:'Stereo L/R', left:'Left Ear', right:'Right Ear', mono:'Mono Center'})[stereoMode.value] || 'Stereo L/R';
+    }
+
+    ids.forEach(id => controls[id].addEventListener('input', () => {
+      updateDigitalDisplays();
+      if (ctx) updateAudioFromControls();
+    }));
+    stereoMode.addEventListener('change', () => {
+      updateDigitalDisplays();
+      if (ctx) updateAudioFromControls();
+    });
+
+    function startAudio() {
+      if (ctx) return;
+      setPreset('normal');
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const noiseBuffer = createNoiseBuffer(ctx, 2);
+
+      ({ a: leftBase1, b: leftBase2 } = buildNoisePair(noiseBuffer));
+      ({ a: rightBase1, b: rightBase2 } = buildNoisePair(noiseBuffer));
+      leftNoise = ctx.createBufferSource(); leftNoise.buffer = noiseBuffer; leftNoise.loop = true;
+      rightNoise = ctx.createBufferSource(); rightNoise.buffer = noiseBuffer; rightNoise.loop = true;
+
+      leftBand = ctx.createBiquadFilter(); leftBand.type = 'bandpass';
+      rightBand = ctx.createBiquadFilter(); rightBand.type = 'bandpass';
+      leftHigh = ctx.createBiquadFilter(); leftHigh.type = 'highpass';
+      rightHigh = ctx.createBiquadFilter(); rightHigh.type = 'highpass';
+
+      leftGain = ctx.createGain();
+      rightGain = ctx.createGain();
+      leftNoiseGain = ctx.createGain();
+      rightNoiseGain = ctx.createGain();
+      masterGain = ctx.createGain();
+      leftPanner = ctx.createStereoPanner();
+      rightPanner = ctx.createStereoPanner();
+
+      analyserMaster = ctx.createAnalyser(); analyserMaster.fftSize = 2048;
+      analyserLeftWave = ctx.createAnalyser(); analyserLeftWave.fftSize = 2048; analyserLeftWave.smoothingTimeConstant = 0.82;
+      analyserRightWave = ctx.createAnalyser(); analyserRightWave.fftSize = 2048; analyserRightWave.smoothingTimeConstant = 0.82;
+      analyserLeftFreq = ctx.createAnalyser(); analyserLeftFreq.fftSize = 1024; analyserLeftFreq.smoothingTimeConstant = 0.78;
+      analyserRightFreq = ctx.createAnalyser(); analyserRightFreq.fftSize = 1024; analyserRightFreq.smoothingTimeConstant = 0.78;
+
+      pulseOsc = ctx.createOscillator(); pulseOsc.type = 'sine';
+      pulseDepthGain = ctx.createGain(); pulseOsc.connect(pulseDepthGain); pulseDepthGain.connect(masterGain.gain);
+
+      leftDivOsc = ctx.createOscillator(); leftDivOsc.type = 'triangle';
+      rightDivOsc = ctx.createOscillator(); rightDivOsc.type = 'triangle';
+      leftDivGain = ctx.createGain(); rightDivGain = ctx.createGain();
+      leftDivOsc.connect(leftDivGain); leftDivGain.connect(leftGain.gain);
+      rightDivOsc.connect(rightDivGain); rightDivGain.connect(rightGain.gain);
+
+      leftRoughOsc = ctx.createOscillator(); leftRoughOsc.type = 'square';
+      rightRoughOsc = ctx.createOscillator(); rightRoughOsc.type = 'square';
+      leftRoughGain = ctx.createGain(); rightRoughGain = ctx.createGain();
+      leftRoughOsc.connect(leftRoughGain); leftRoughGain.connect(leftBand.frequency);
+      rightRoughOsc.connect(rightRoughGain); rightRoughGain.connect(rightBand.frequency);
+
+      leftBase1.connect(leftBand); leftBase2.connect(leftBand);
+      rightBase1.connect(rightBand); rightBase2.connect(rightBand);
+      leftNoise.connect(leftHigh); rightNoise.connect(rightHigh);
+
+      leftBand.connect(leftGain); rightBand.connect(rightGain);
+      leftHigh.connect(leftNoiseGain); rightHigh.connect(rightNoiseGain);
+
+      leftGain.connect(analyserLeftWave); leftGain.connect(analyserLeftFreq);
+      rightGain.connect(analyserRightWave); rightGain.connect(analyserRightFreq);
+
+      leftGain.connect(leftPanner); rightGain.connect(rightPanner);
+      leftNoiseGain.connect(leftPanner); rightNoiseGain.connect(rightPanner);
+
+      leftPanner.connect(masterGain); rightPanner.connect(masterGain);
+      masterGain.connect(analyserMaster); analyserMaster.connect(ctx.destination);
+
+      leftBase1.start(); leftBase2.start(); rightBase1.start(); rightBase2.start();
+      leftNoise.start(); rightNoise.start();
+      pulseOsc.start(); leftDivOsc.start(); rightDivOsc.start(); leftRoughOsc.start(); rightRoughOsc.start();
+
+      updateAudioFromControls();
+      engineStatus.textContent = 'Engine status: running';
+      animationFrame = requestAnimationFrame(audioLoop);
+    }
+
+    function updateAudioFromControls() {
+      if (!ctx) return;
+      const metrics = computeModelMetrics();
+      const hr = parseFloat(controls.heartRate.value);
+      const vel = parseFloat(controls.venousVelocity.value);
+      const icp = parseFloat(controls.intracranialPressure.value);
+      const volume = parseFloat(controls.masterVolume.value);
+
+      const baseFreqLeft = 60 + vel * 175 + metrics.left.turbulence * 20 + clamp((icp - 12) / 20, 0, 1.2) * 14;
+      const baseFreqRight = 60 + vel * 175 + metrics.right.turbulence * 20 + clamp((icp - 12) / 20, 0, 1.2) * 14;
+
+      leftBand.frequency.setTargetAtTime(baseFreqLeft, ctx.currentTime, 0.06);
+      rightBand.frequency.setTargetAtTime(baseFreqRight, ctx.currentTime, 0.06);
+      leftBand.Q.setTargetAtTime(clamp(0.8 + metrics.left.turbulence * 0.38 + metrics.left.roughness * 0.22, 0.6, 3.2), ctx.currentTime, 0.06);
+      rightBand.Q.setTargetAtTime(clamp(0.8 + metrics.right.turbulence * 0.38 + metrics.right.roughness * 0.22, 0.6, 3.2), ctx.currentTime, 0.06);
+
+      leftHigh.frequency.setTargetAtTime(250 + metrics.left.transmission * 1600 + metrics.left.roughness * 180, ctx.currentTime, 0.06);
+      rightHigh.frequency.setTargetAtTime(250 + metrics.right.transmission * 1600 + metrics.right.roughness * 180, ctx.currentTime, 0.06);
+
+      const leftBaseAmp = volume * (0.22 + metrics.left.turbulence * 0.10 + metrics.left.transmission * 0.06);
+      const rightBaseAmp = volume * (0.22 + metrics.right.turbulence * 0.10 + metrics.right.transmission * 0.06);
+      leftGain.gain.setTargetAtTime(clamp(leftBaseAmp, 0.01, 0.95), ctx.currentTime, 0.08);
+      rightGain.gain.setTargetAtTime(clamp(rightBaseAmp, 0.01, 0.95), ctx.currentTime, 0.08);
+
+      leftNoiseGain.gain.setTargetAtTime(volume * (0.010 + metrics.left.turbulence * 0.028 + metrics.left.transmission * 0.090 + metrics.left.roughness * 0.025), ctx.currentTime, 0.08);
+      rightNoiseGain.gain.setTargetAtTime(volume * (0.010 + metrics.right.turbulence * 0.028 + metrics.right.transmission * 0.090 + metrics.right.roughness * 0.025), ctx.currentTime, 0.08);
+
+      pulseOsc.frequency.setTargetAtTime(hr / 60, ctx.currentTime, 0.05);
+      pulseDepthGain.gain.setTargetAtTime(0.018 + vel * 0.045 + ((metrics.left.turbulence + metrics.right.turbulence) / 2) * 0.018, ctx.currentTime, 0.07);
+
+      leftDivOsc.frequency.setTargetAtTime(0.7 + metrics.left.diverticulum * 4.2, ctx.currentTime, 0.08);
+      rightDivOsc.frequency.setTargetAtTime(0.7 + metrics.right.diverticulum * 4.2, ctx.currentTime, 0.08);
+      leftDivGain.gain.setTargetAtTime(metrics.left.diverticulum * volume * 0.09, ctx.currentTime, 0.08);
+      rightDivGain.gain.setTargetAtTime(metrics.right.diverticulum * volume * 0.09, ctx.currentTime, 0.08);
+
+      leftRoughOsc.frequency.setTargetAtTime(16 + metrics.left.roughness * 35, ctx.currentTime, 0.08);
+      rightRoughOsc.frequency.setTargetAtTime(16 + metrics.right.roughness * 35, ctx.currentTime, 0.08);
+      leftRoughGain.gain.setTargetAtTime(14 + metrics.left.roughness * 55, ctx.currentTime, 0.08);
+      rightRoughGain.gain.setTargetAtTime(14 + metrics.right.roughness * 55, ctx.currentTime, 0.08);
+
+      masterGain.gain.setTargetAtTime(clamp(volume * 1.18, 0.02, 0.95), ctx.currentTime, 0.08);
+
+      let leftPan = -0.85, rightPan = 0.85, leftModeGain = 1, rightModeGain = 1;
+      if (stereoMode.value === 'left') {
+        leftPan = -0.95; rightPan = -0.35; leftModeGain = 1.2; rightModeGain = 0.72;
+      } else if (stereoMode.value === 'right') {
+        leftPan = 0.35; rightPan = 0.95; leftModeGain = 0.72; rightModeGain = 1.2;
+      } else if (stereoMode.value === 'mono') {
+        leftPan = 0; rightPan = 0;
+      }
+      leftPanner.pan.setTargetAtTime(leftPan, ctx.currentTime, 0.06);
+      rightPanner.pan.setTargetAtTime(rightPan, ctx.currentTime, 0.06);
+      leftGain.gain.setTargetAtTime(clamp(leftBaseAmp * leftModeGain, 0.01, 0.95), ctx.currentTime, 0.08);
+      rightGain.gain.setTargetAtTime(clamp(rightBaseAmp * rightModeGain, 0.01, 0.95), ctx.currentTime, 0.08);
+
+      leftBase1.playbackRate.setTargetAtTime(1.0 + metrics.left.roughness * 0.008, ctx.currentTime, 0.08);
+      leftBase2.playbackRate.setTargetAtTime(1.0 - metrics.left.roughness * 0.006, ctx.currentTime, 0.08);
+      rightBase1.playbackRate.setTargetAtTime(1.0 + metrics.right.roughness * 0.008, ctx.currentTime, 0.08);
+      rightBase2.playbackRate.setTargetAtTime(1.0 - metrics.right.roughness * 0.006, ctx.currentTime, 0.08);
+    }
+
+    function drawGrid(ctx2d, canvas, lineColor='rgba(148,163,184,0.14)') {
+      ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+      ctx2d.fillStyle = '#081225';
+      ctx2d.fillRect(0, 0, canvas.width, canvas.height);
+      ctx2d.strokeStyle = lineColor;
+      ctx2d.lineWidth = 1;
+      for (let i = 0; i <= 5; i++) {
+        const y = (canvas.height / 5) * i;
+        ctx2d.beginPath(); ctx2d.moveTo(0, y); ctx2d.lineTo(canvas.width, y); ctx2d.stroke();
+      }
+    }
+
+    function drawWaveform(analyser, ctx2d, canvas, color, inactiveText) {
+      drawGrid(ctx2d, canvas);
+      if (!ctx || !analyser) {
+        ctx2d.fillStyle = '#94a3b8';
+        ctx2d.font = '16px Arial';
+        ctx2d.fillText(inactiveText, 16, canvas.height / 2);
+        return;
+      }
+      const buffer = new Uint8Array(analyser.fftSize);
+      analyser.getByteTimeDomainData(buffer);
+      ctx2d.strokeStyle = color; ctx2d.lineWidth = 2; ctx2d.beginPath();
+      const sliceWidth = canvas.width / buffer.length;
+      let x = 0;
+      for (let i = 0; i < buffer.length; i++) {
+        const v = buffer[i] / 128.0;
+        const y = v * canvas.height / 2;
+        if (i === 0) ctx2d.moveTo(x, y); else ctx2d.lineTo(x, y);
+        x += sliceWidth;
+      }
+      ctx2d.stroke();
+    }
+
+    function drawFrequency(analyser, ctx2d, canvas, color, inactiveText) {
+      drawGrid(ctx2d, canvas, 'rgba(148,163,184,0.08)');
+      if (!ctx || !analyser) {
+        ctx2d.fillStyle = '#94a3b8';
+        ctx2d.font = '16px Arial';
+        ctx2d.fillText(inactiveText, 16, canvas.height / 2);
+        return;
+      }
+      const buffer = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(buffer);
+      const r = color.includes('239') ? 239 : 56;
+      const g = color.includes('239') ? 68 : 189;
+      const b = color.includes('239') ? 68 : 248;
+
+      ctx2d.beginPath();
+      ctx2d.moveTo(0, canvas.height);
+      for (let i = 0; i < buffer.length; i++) {
+        const x = (i / (buffer.length - 1)) * canvas.width;
+        const y = canvas.height - (buffer[i] / 255) * (canvas.height * 0.82);
+        ctx2d.lineTo(x, y);
+      }
+      ctx2d.lineTo(canvas.width, canvas.height);
+      ctx2d.closePath();
+      const grad = ctx2d.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, `rgba(${r},${g},${b},0.78)`);
+      grad.addColorStop(1, `rgba(${r},${g},${b},0.06)`);
+      ctx2d.fillStyle = grad;
+      ctx2d.fill();
+
+      ctx2d.strokeStyle = `rgba(${r},${g},${b},0.95)`;
+      ctx2d.lineWidth = 2.5;
+      ctx2d.beginPath();
+      for (let i = 0; i < buffer.length; i++) {
+        const x = (i / (buffer.length - 1)) * canvas.width;
+        const y = canvas.height - (buffer[i] / 255) * (canvas.height * 0.82);
+        if (i === 0) ctx2d.moveTo(x, y); else ctx2d.lineTo(x, y);
+      }
+      ctx2d.stroke();
+
+      for (let k = 0; k < 3; k++) {
+        ctx2d.strokeStyle = `rgba(${r},${g},${b},${0.12 - k*0.03})`;
+        ctx2d.lineWidth = 8 - k*2;
+        ctx2d.beginPath();
+        for (let i = 0; i < buffer.length; i += 2) {
+          const x = (i / (buffer.length - 1)) * canvas.width;
+          const y = canvas.height - (buffer[i] / 255) * (canvas.height * (0.50 + k * 0.08));
+          if (i === 0) ctx2d.moveTo(x, y); else ctx2d.lineTo(x, y);
+        }
+        ctx2d.stroke();
+      }
+    }
+
+    function drawFlow(ctx2d, canvas, sideMetrics, sideColor, label) {
+      drawGrid(ctx2d, canvas, 'rgba(148,163,184,0.06)');
+      const centerY = canvas.height / 2;
+      const baseHeight = 36;
+      const vesselTop = centerY - baseHeight;
+      const vesselBottom = centerY + baseHeight;
+      const instability = clamp((sideMetrics.turbulence / 3) * 0.55 + (sideMetrics.roughness / 2.3) * 0.45, 0, 1.2);
+      const narrowing = sideMetrics.stenosis * 0.48;
+      const waveAmp = 8 + instability * 20;
+      const rgb = sideColor === '#ef4444' ? '239,68,68' : '56,189,248';
+
+      ctx2d.fillStyle = 'rgba(15,23,42,0.97)';
+      ctx2d.fillRect(0, 0, canvas.width, canvas.height);
+
+      const outerGlow = ctx2d.createRadialGradient(canvas.width*0.55, centerY, 20, canvas.width*0.55, centerY, canvas.width*0.55);
+      outerGlow.addColorStop(0, `rgba(${rgb},0.18)`);
+      outerGlow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx2d.fillStyle = outerGlow;
+      ctx2d.fillRect(0,0,canvas.width,canvas.height);
+
+      ctx2d.strokeStyle = `rgba(${rgb},0.9)`;
+      ctx2d.lineWidth = 3;
+      ctx2d.beginPath();
+      for (let x = 0; x <= canvas.width; x += 4) {
+        const norm = x / canvas.width;
+        const stenosisShape = 1 - narrowing * Math.exp(-Math.pow((norm - 0.55) / 0.16, 2));
+        const mod = Math.sin((x * 0.04) + flowPhase) * instability * 5;
+        const y = centerY - (baseHeight * stenosisShape) + mod;
+        if (x === 0) ctx2d.moveTo(x, y); else ctx2d.lineTo(x, y);
+      }
+      ctx2d.stroke();
+      ctx2d.beginPath();
+      for (let x = 0; x <= canvas.width; x += 4) {
+        const norm = x / canvas.width;
+        const stenosisShape = 1 - narrowing * Math.exp(-Math.pow((norm - 0.55) / 0.16, 2));
+        const mod = Math.sin((x * 0.04) + flowPhase + 1.1) * instability * 5;
+        const y = centerY + (baseHeight * stenosisShape) + mod;
+        if (x === 0) ctx2d.moveTo(x, y); else ctx2d.lineTo(x, y);
+      }
+      ctx2d.stroke();
+
+      const lumenGrad = ctx2d.createLinearGradient(0, vesselTop, 0, vesselBottom);
+      lumenGrad.addColorStop(0, `rgba(${rgb},0.06)`);
+      lumenGrad.addColorStop(0.5, `rgba(${rgb},0.18)`);
+      lumenGrad.addColorStop(1, `rgba(${rgb},0.06)`);
+      ctx2d.fillStyle = lumenGrad;
+      ctx2d.fillRect(0, vesselTop, canvas.width, vesselBottom - vesselTop);
+
+      const lineCount = 16;
+      for (let i = 0; i < lineCount; i++) {
+        const frac = i / (lineCount - 1);
+        ctx2d.strokeStyle = `rgba(${rgb}, ${0.18 + frac * 0.22})`;
+        ctx2d.lineWidth = 1.5 + (1-frac)*0.8;
+        ctx2d.beginPath();
+        for (let x = 0; x <= canvas.width; x += 8) {
+          const nx = x / canvas.width;
+          const stenosisShape = 1 - narrowing * Math.exp(-Math.pow((nx - 0.55) / 0.16, 2));
+          const localHalfHeight = (baseHeight - 4) * stenosisShape;
+          const baseY = centerY - localHalfHeight + frac * localHalfHeight * 2;
+          const waviness = Math.sin((x * 0.06) + flowPhase * (1.4 + frac) + frac * 6) * waveAmp * (0.12 + instability * 0.32);
+          const vortex = Math.sin((x * 0.018) - flowPhase * 2.5 + frac * 9) * sideMetrics.diverticulum * 12;
+          const rough = Math.sin((x * 0.14) + flowPhase * 4 + frac * 12) * sideMetrics.roughness * 1.8;
+          const y = baseY + waviness + vortex + rough;
+          if (x === 0) ctx2d.moveTo(x, y); else ctx2d.lineTo(x, y);
+        }
+        ctx2d.stroke();
+      }
+
+      for (let p = 0; p < 12; p++) {
+        const px = ((p * 43) + (flowPhase * 130 * (1 + instability))) % (canvas.width + 40) - 20;
+        const py = centerY + Math.sin(p * 0.9 + flowPhase * 2.4) * (8 + instability * 16);
+        const pr = 2 + (p % 3);
+        const orb = ctx2d.createRadialGradient(px, py, 0, px, py, pr * 5);
+        orb.addColorStop(0, `rgba(${rgb},0.95)`);
+        orb.addColorStop(1, `rgba(${rgb},0)`);
+        ctx2d.fillStyle = orb;
+        ctx2d.beginPath();
+        ctx2d.arc(px, py, pr * 5, 0, Math.PI * 2);
+        ctx2d.fill();
+      }
+
+      if (sideMetrics.stenosis > 0.15) {
+        const throatX = canvas.width * 0.55;
+        ctx2d.fillStyle = `rgba(${rgb},0.22)`;
+        ctx2d.fillRect(throatX - 12, vesselTop - 10, 24, vesselBottom - vesselTop + 20);
+      }
+
+      if (sideMetrics.dehiscence > 0.08) {
+        const width = 26 + sideMetrics.dehiscence * 52;
+        const leak = ctx2d.createRadialGradient(canvas.width * 0.78, centerY, 4, canvas.width * 0.78, centerY, width);
+        leak.addColorStop(0, `rgba(${rgb},0.32)`);
+        leak.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx2d.fillStyle = leak;
+        ctx2d.beginPath();
+        ctx2d.arc(canvas.width * 0.78, centerY, width, -0.9, 0.9);
+        ctx2d.fill();
+      }
+
+      const badge = sideMetrics.burden > 0.72 ? 'MARKED' : sideMetrics.burden > 0.38 ? 'MODERATE' : 'MILD';
+      ctx2d.fillStyle = 'rgba(2,6,23,0.7)';
+      ctx2d.fillRect(10, 10, 86, 26);
+      ctx2d.strokeStyle = `rgba(${rgb},0.9)`;
+      ctx2d.strokeRect(10,10,86,26);
+      ctx2d.fillStyle = sideColor;
+      ctx2d.font = 'bold 12px Arial';
+      ctx2d.fillText(badge, 22, 28);
+      ctx2d.font = '13px Arial';
+      ctx2d.fillText(label, 108, 28);
+    }
+
+    function drawAllVisuals() {
+      const metrics = computeModelMetrics();
+      drawWaveform(analyserLeftWave, waveformLeftCtx, waveformLeftCanvas, '#ef4444', 'Left waveform inactive');
+      drawWaveform(analyserRightWave, waveformRightCtx, waveformRightCanvas, '#38bdf8', 'Right waveform inactive');
+      drawFrequency(analyserLeftFreq, freqLeftCtx, freqLeftCanvas, 'rgba(239,68,68,0.88)', 'Left spectrum inactive');
+      drawFrequency(analyserRightFreq, freqRightCtx, freqRightCanvas, 'rgba(56,189,248,0.85)', 'Right spectrum inactive');
+      drawFlow(flowLeftCtx, flowLeftCanvas, metrics.left, '#ef4444', 'Left flow path');
+      drawFlow(flowRightCtx, flowRightCanvas, metrics.right, '#38bdf8', 'Right flow path');
+    }
+
+    function audioLoop() {
+      if (!ctx) return;
+      updateAudioFromControls();
+      flowPhase += 0.05;
+      drawAllVisuals();
+      animationFrame = requestAnimationFrame(audioLoop);
+    }
+
+    function stopAudio() {
+      if (!ctx) return;
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+      [leftBase1,leftBase2,rightBase1,rightBase2,leftNoise,rightNoise,pulseOsc,leftDivOsc,rightDivOsc,leftRoughOsc,rightRoughOsc].forEach(node => {
+        try { node.stop(); } catch (e) {}
+      });
+      const closingCtx = ctx; ctx = null; closingCtx.close();
+      engineStatus.textContent = 'Engine status: stopped';
+      drawAllVisuals();
+    }
+
+    function setValues(values) {
+      Object.entries(values).forEach(([k,v]) => { if (controls[k]) controls[k].value = v; });
+      updateDigitalDisplays();
+      if (ctx) updateAudioFromControls();
+    }
+
+    function setPreset(name) {
+      const presetMap = {
+        normal: {
+          heartRate:72, venousVelocity:0.22, bloodDensity:1.05, oxygenation:97, intracranialPressure:12, masterVolume:0.22,
+          leftDiameter:6.8, leftStenosis:0, leftDiverticulum:0, leftDehiscence:0, leftWallIrregularity:0, leftGlobalTurbulence:0,
+          rightDiameter:6.8, rightStenosis:0, rightDiverticulum:0, rightDehiscence:0, rightWallIrregularity:0, rightGlobalTurbulence:0
+        },
+        leftHum: {
+          heartRate:74, venousVelocity:0.28, bloodDensity:1.05, oxygenation:96, intracranialPressure:15, masterVolume:0.24,
+          leftDiameter:5.7, leftStenosis:22, leftDiverticulum:14, leftDehiscence:18, leftWallIrregularity:12, leftGlobalTurbulence:16,
+          rightDiameter:7.1, rightStenosis:4, rightDiverticulum:0, rightDehiscence:2, rightWallIrregularity:0, rightGlobalTurbulence:4
+        },
+        rightHum: {
+          heartRate:74, venousVelocity:0.28, bloodDensity:1.05, oxygenation:96, intracranialPressure:15, masterVolume:0.24,
+          leftDiameter:6.9, leftStenosis:4, leftDiverticulum:0, leftDehiscence:2, leftWallIrregularity:0, leftGlobalTurbulence:4,
+          rightDiameter:5.7, rightStenosis:22, rightDiverticulum:14, rightDehiscence:18, rightWallIrregularity:12, rightGlobalTurbulence:16
+        },
+        moderate: {
+          heartRate:84, venousVelocity:0.42, bloodDensity:1.06, oxygenation:92, intracranialPressure:22, masterVolume:0.28,
+          leftDiameter:4.9, leftStenosis:46, leftDiverticulum:28, leftDehiscence:17, leftWallIrregularity:32, leftGlobalTurbulence:38,
+          rightDiameter:4.9, rightStenosis:46, rightDiverticulum:28, rightDehiscence:17, rightWallIrregularity:32, rightGlobalTurbulence:38
+        },
+        markedBilateral: {
+          heartRate:102, venousVelocity:0.68, bloodDensity:1.07, oxygenation:86, intracranialPressure:31, masterVolume:0.42,
+          leftDiameter:3.0, leftStenosis:90, leftDiverticulum:76, leftDehiscence:70, leftWallIrregularity:86, leftGlobalTurbulence:92,
+          rightDiameter:3.0, rightStenosis:90, rightDiverticulum:76, rightDehiscence:70, rightWallIrregularity:86, rightGlobalTurbulence:92
+        },
+        leftPathology: {
+          heartRate:94, venousVelocity:0.58, bloodDensity:1.07, oxygenation:89, intracranialPressure:27, masterVolume:0.34,
+          leftDiameter:3.3, leftStenosis:84, leftDiverticulum:66, leftDehiscence:58, leftWallIrregularity:76, leftGlobalTurbulence:82,
+          rightDiameter:7.5, rightStenosis:8, rightDiverticulum:6, rightDehiscence:4, rightWallIrregularity:6, rightGlobalTurbulence:8
+        },
+        rightPathology: {
+          heartRate:94, venousVelocity:0.58, bloodDensity:1.07, oxygenation:89, intracranialPressure:27, masterVolume:0.34,
+          leftDiameter:7.5, leftStenosis:8, leftDiverticulum:6, leftDehiscence:4, leftWallIrregularity:6, leftGlobalTurbulence:8,
+          rightDiameter:3.3, rightStenosis:84, rightDiverticulum:66, rightDehiscence:58, rightWallIrregularity:76, rightGlobalTurbulence:82
+        }
+      };
+      const aliasMap = {
+        leftDominant: 'leftHum',
+        rightDominant: 'rightHum',
+        moderateLeft: 'moderateLeft',
+        moderateRight: 'moderateRight',
+        markedLeft: 'leftPathology',
+        markedRight: 'rightPathology'
+      };
+      const resolved = aliasMap[name] || name;
+      if (resolved === 'moderateLeft') {
+        return setValues({
+          heartRate:88, venousVelocity:0.45, bloodDensity:1.06, oxygenation:91, intracranialPressure:23, masterVolume:0.29,
+          leftDiameter:4.4, leftStenosis:58, leftDiverticulum:36, leftDehiscence:24, leftWallIrregularity:42, leftGlobalTurbulence:48,
+          rightDiameter:6.9, rightStenosis:6, rightDiverticulum:2, rightDehiscence:2, rightWallIrregularity:4, rightGlobalTurbulence:6
+        });
+      }
+      if (resolved === 'moderateRight') {
+        return setValues({
+          heartRate:88, venousVelocity:0.45, bloodDensity:1.06, oxygenation:91, intracranialPressure:23, masterVolume:0.29,
+          leftDiameter:6.9, leftStenosis:6, leftDiverticulum:2, leftDehiscence:2, leftWallIrregularity:4, leftGlobalTurbulence:6,
+          rightDiameter:4.4, rightStenosis:58, rightDiverticulum:36, rightDehiscence:24, rightWallIrregularity:42, rightGlobalTurbulence:48
+        });
+      }
+      if (presetMap[resolved]) {
+        setValues(presetMap[resolved]);
+      }
+    }
+
+    document.getElementById('startBtn').addEventListener('click', startAudio);
+    document.getElementById('stopBtn').addEventListener('click', stopAudio);
+    document.getElementById('normalBtn').addEventListener('click', () => setPreset('normal'));
+    document.querySelectorAll('[data-preset]').forEach(btn => btn.addEventListener('click', () => setPreset(btn.dataset.preset)));
+
+    updateDigitalDisplays();
+    drawAllVisuals();
+  </script>
+</body>
+</html>
